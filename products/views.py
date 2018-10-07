@@ -1,7 +1,11 @@
+from _dummy_thread import error
+
+from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Product
+from .models import Product, UserProduct
 from django.utils import timezone
+from django.contrib import messages
 
 def home(request):
     products = Product.objects
@@ -39,6 +43,16 @@ def detail(request, product_id):
 def upvote(request, product_id):
     if request.method == 'POST':
         product = get_object_or_404(Product, pk=product_id)
-        product.votes_total += 1
-        product.save()
-        return redirect('/products/' + str(product.id))
+        print(UserProduct.objects.filter(product=product, user=request.user))
+        if not UserProduct.objects.filter(product=product, user=request.user):
+            product.votes_total += 1
+            userProduct = UserProduct()
+            userProduct.product = product
+            userProduct.user = request.user
+            userProduct.save()
+            mistake=''
+            product.save()
+        else:
+            print('here i am')
+            mistake = 'You have already voted'
+        return render(request, 'products/details.html', {'product': product, 'error':mistake})
